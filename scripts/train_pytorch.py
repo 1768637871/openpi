@@ -405,7 +405,7 @@ def train_loop(config: _config.TrainConfig):
         model_cfg = config.model
         # Update dtype to match pytorch_training_precision
         object.__setattr__(model_cfg, "dtype", config.pytorch_training_precision)
-
+    # pytorch 模型定义位置
     model = openpi.models_pytorch.pi0_pytorch.PI0Pytorch(model_cfg).to(device)
 
     if hasattr(model, "gradient_checkpointing_enable"):

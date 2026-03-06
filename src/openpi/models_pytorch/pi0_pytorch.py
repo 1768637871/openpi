@@ -1,5 +1,6 @@
 import logging
 import math
+from typing import Any
 
 import torch
 from torch import Tensor
@@ -163,7 +164,7 @@ class PI0Pytorch(nn.Module):
         observation = _preprocessing.preprocess_observation_pytorch(observation, train=train)
         return (
             list(observation.images.values()),
-            list(observation.image_masks.values()),
+            list[Any](observation.image_masks.values()),
             observation.tokenized_prompt,
             observation.tokenized_prompt_mask,
             observation.state,
@@ -315,13 +316,14 @@ class PI0Pytorch(nn.Module):
 
     def forward(self, observation, actions, noise=None, time=None) -> Tensor:
         """Do a full training forward pass and compute the loss (batch_size x num_steps x num_motors)"""
+        # import ipdb; ipdb.set_trace()
         images, img_masks, lang_tokens, lang_masks, state = self._preprocess_observation(observation, train=True)
-
+        # 3 * torch.Size([256, 3, 224, 224]), 3 * torch.Size([256, 3, 224, 224]), torch.Size([256, 200]), torch.Size([256, 200]), torch.Size([256, 32])
         if noise is None:
-            noise = self.sample_noise(actions.shape, actions.device)
+            noise = self.sample_noise(actions.shape, actions.device)  # torch.Size([256, 10, 32])
 
         if time is None:
-            time = self.sample_time(actions.shape[0], actions.device)
+            time = self.sample_time(actions.shape[0], actions.device)  # [0.001, 1.0] torch.Size([256])
 
         time_expanded = time[:, None, None]
         x_t = time_expanded * noise + (1 - time_expanded) * actions
@@ -398,7 +400,7 @@ class PI0Pytorch(nn.Module):
             use_cache=True,
         )
 
-        dt = -1.0 / num_steps
+        dt = -1.0 / num_steps  # dt (步长) 决定了每次修正的幅度。如果v_t时完美的恒定速度。理想情况下，一步dt就可以直接从噪声跳到数据。
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
 
         x_t = noise
